@@ -1,0 +1,70 @@
+import { useEffect, useState } from 'react';
+import { Routes, Route } from 'react-router';
+import Navegacion from './components/Navegacion';
+import Inicio from './paginas/Inicio';
+import Catalogo from './paginas/Catalogo';
+import Detalle from './paginas/Detalle';
+import Favoritos from './paginas/Favoritos';
+import NuevaReceta from './paginas/NuevaReceta';
+import NoEncontrada from './paginas/NoEncontrada';
+
+function leerFavoritos() {
+  try {
+    const guardados = JSON.parse(localStorage.getItem('favoritos') ?? '[]');
+    return Array.isArray(guardados) ? guardados : [];
+  } catch {
+    return [];
+  }
+}
+
+function App() {
+  const [favoritos, setFavoritos] = useState(leerFavoritos);
+  const [propias, setPropias] = useState([]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('favoritos', JSON.stringify(favoritos));
+    } catch {
+      // La app sigue funcionando aunque el navegador no permita guardar datos.
+    }
+  }, [favoritos]);
+
+  function toggleFavorito(id) {
+    if (favoritos.includes(id)) {
+      setFavoritos(favoritos.filter((f) => f !== id));
+    } else {
+      setFavoritos([...favoritos, id]);
+    }
+  }
+
+  function agregarReceta(receta) {
+    setPropias([...propias, receta]);
+  }
+
+  return (
+    <div className="app">
+      <Navegacion totalFavoritos={favoritos.length} />
+      <main>
+        <Routes>
+          <Route path="/" element={<Inicio />} />
+          <Route path="/recetas" element={<Catalogo propias={propias} />} />
+          <Route
+            path="/recetas/:id"
+            element={
+              <Detalle propias={propias} favoritos={favoritos} onToggleFavorito={toggleFavorito} />
+            }
+          />
+          <Route
+            path="/favoritos"
+            element={<Favoritos favoritos={favoritos} propias={propias} onQuitar={toggleFavorito} />}
+          />
+          <Route path="/nueva" element={<NuevaReceta onAgregar={agregarReceta} />} />
+          <Route path="/404" element={<NoEncontrada />} />
+          <Route path="*" element={<NoEncontrada />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
+export default App;
